@@ -19,6 +19,7 @@ export default function Team() {
   const user = useAuthStore((state) => state.user);
   const canManageTeam = user && canEdit(user.role, 'team');
   const [members, setMembers] = useState([...mockTeamMembers]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [newMember, setNewMember] = useState({
     firstName: '',
     lastName: '',
