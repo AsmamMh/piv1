@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notifications-service
+  namespace: smartsite
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notifications-service
+  template:
+    metadata:
+      labels:
+        app: notifications-service
+    spec:
+      containers:
+      - name: notifications-service
+        image: smartsite/notifications-service:latest
+        ports:
+        - containerPort: 3006
+        env:
+        - name: PORT
+          value: "3006"
+        - name: MAIL_HOST
+          valueFrom:
+            secretKeyRef:
+              name: mail-credentials
+              key: host
+              optional: true
+        - name: MAIL_PORT
+          valueFrom:
+            secretKeyRef:
+              name: mail-credentials
+              key: port
+              optional: true
+        - name: MAIL_USER
+          valueFrom:
+            secretKeyRef:
+              name: mail-credentials
+              key: user
+              optional: true
+        - name: MAIL_PASS
+          valueFrom:
+            secretKeyRef:
+              name: mail-credentials
+              key: pass
+              optional: true
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notifications-service
+  namespace: smartsite
+spec:
+  selector:
+    app: notifications-service
+  ports:
+  - protocol: TCP
+    port: 3006
+    targetPort: 3006
+  type: ClusterIP

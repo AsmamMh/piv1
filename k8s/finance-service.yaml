@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finance-service
+  namespace: smartsite
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: finance-service
+  template:
+    metadata:
+      labels:
+        app: finance-service
+    spec:
+      containers:
+      - name: finance-service
+        image: smartsite/finance-service:latest
+        ports:
+        - containerPort: 3004
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: finance-db-url
+        - name: PORT
+          value: "3004"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: finance-service
+  namespace: smartsite
+spec:
+  selector:
+    app: finance-service
+  ports:
+  - protocol: TCP
+    port: 3004
+    targetPort: 3004
+  type: ClusterIP

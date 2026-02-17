@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: projects-service
+  namespace: smartsite
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: projects-service
+  template:
+    metadata:
+      labels:
+        app: projects-service
+    spec:
+      containers:
+      - name: projects-service
+        image: smartsite/projects-service:latest
+        ports:
+        - containerPort: 3002
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: projects-db-url
+        - name: PORT
+          value: "3002"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3002
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: projects-service
+  namespace: smartsite
+spec:
+  selector:
+    app: projects-service
+  ports:
+  - protocol: TCP
+    port: 3002
+    targetPort: 3002
+  type: ClusterIP
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: projects-service-hpa
+  namespace: smartsite
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: projects-service
+  minReplicas: 2
+  maxReplicas: 4
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
